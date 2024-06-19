@@ -94,6 +94,7 @@ char16_t *strcpy16(char16_t *dst, const char16_t *src)
 
 size_t strlen16(const char16_t *s)
 {
+  if((void *)s == (void *)0) return 0;
   const char16_t *ss = s;
   while ( *ss )
     ss++;
@@ -325,6 +326,10 @@ String16::String16(const String16& o, size_t len, size_t begin)
 
 String16::String16(const char16_t* o)
 {
+    if((void *)o == (void *)0x0) {
+        mString = getEmptyString();
+	return;
+    }
     size_t len = strlen16(o);
     SharedBuffer* buf = SharedBuffer::alloc((len+1)*sizeof(char16_t));
     LOG_ASSERT(buf, "Unable to allocate shared buffer");
