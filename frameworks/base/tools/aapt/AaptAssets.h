@@ -430,7 +430,7 @@ public:
     const DefaultKeyedVector<String8, sp<AaptSymbols> >& getNestedSymbols() const
         { return mNestedSymbols; }
 
-    const String16& getComment(const String8& name) const
+    const String16 getComment(const String8& name) const
         { return get_symbol(name).comment; }
     const String16& getTypeComment(const String8& name) const
         { return get_symbol(name).typeComment; }

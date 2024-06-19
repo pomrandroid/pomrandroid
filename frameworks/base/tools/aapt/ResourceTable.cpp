@@ -325,7 +325,7 @@ static status_t compileAttribute(const sp<AaptFile>& in,
     }
 
     attr.comment = String16(
-            block.getComment(&len) ? block.getComment(&len) : nulStr);
+            (String16)block.getComment(&len) ? (String16)block.getComment(&len) : nulStr);
 
     ssize_t typeIdx = block.indexOfAttribute(NULL, "format");
     if (typeIdx >= 0) {
@@ -908,7 +908,7 @@ status_t compileResourceFile(Bundle* bundle,
                     if (symbols != NULL) {
                         symbols->makeSymbolPublic(String8(name), srcPos);
                         String16 comment(
-                            block.getComment(&len) ? block.getComment(&len) : nulStr);
+                            (String16)block.getComment(&len) ? (String16)block.getComment(&len) : nulStr);
                         symbols->appendComment(String8(name), comment, srcPos);
                     } else {
                         srcPos.error("Unable to create symbols!\n");
@@ -990,7 +990,7 @@ status_t compileResourceFile(Bundle* bundle,
                 }
                 
                 String16 comment(
-                    block.getComment(&len) ? block.getComment(&len) : nulStr);
+                    (String16)block.getComment(&len) ? (String16)block.getComment(&len) : nulStr);
                 for (uint32_t curIdent=start; curIdent<=end; curIdent++) {
                     if (localHasErrors) {
                         break;
@@ -1113,7 +1113,7 @@ status_t compileResourceFile(Bundle* bundle,
                     }
                     
                     String16 comment(
-                        block.getComment(&len) ? block.getComment(&len) : nulStr);
+                        (String16)block.getComment(&len) ? (String16)block.getComment(&len) : nulStr);
                     styleSymbols->appendComment(String8(ident), comment, srcPos);
                 } else {
                     symbols = NULL;
@@ -1149,7 +1149,7 @@ status_t compileResourceFile(Bundle* bundle,
                         }
 
                         String16 comment(
-                            block.getComment(&len) ? block.getComment(&len) : nulStr);
+                            (const String16)block.getComment(&len) ? (const String16)block.getComment(&len) : nulStr);
                         String16 itemIdent;
                         err = compileAttribute(in, block, myPackage, outTable, &itemIdent, true);
                         if (err != NO_ERROR) {
@@ -1358,7 +1358,7 @@ status_t compileResourceFile(Bundle* bundle,
                 product = String16(block.getAttributeStringValue(identIdx, &len));
             }
 
-            String16 comment(block.getComment(&len) ? block.getComment(&len) : nulStr);
+            String16 comment((String16)block.getComment(&len) ? (String16)block.getComment(&len) : nulStr);
             
             if (curIsBag) {
                 // Figure out the parent of this bag...

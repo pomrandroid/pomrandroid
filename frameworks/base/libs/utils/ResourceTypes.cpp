@@ -446,7 +446,7 @@ void ResStringPool::uninit()
     } \
     (str)++;
 
-const uint16_t* ResStringPool::stringAt(size_t idx, size_t* outLen) const
+const char16_t* android::ResStringPool::stringAt(size_t idx, size_t*outLen) const
 {
     if (mError == NO_ERROR && idx < mHeader->stringCount) {
         const bool isUTF8 = (mHeader->flags&ResStringPool_header::UTF8_FLAG) != 0;
