@@ -43,12 +43,12 @@ LOCAL_SHARED_LIBRARIES := \
   libutils \
   libhardware_legacy \
   libcutils \
-  libmedia \
-
+  liblog \
+  libmedia
 
 LOCAL_STATIC_LIBRARIES := \
   libzipfile \
-  libunz \
+  libz \
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
   libESR_Shared \
@@ -66,9 +66,8 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
   libSR_Vocabulary \
 
 
-LOCAL_LDLIBS += -lpthread
-
 LOCAL_MODULE := libsrec_jni
 
-include $(BUILD_SHARED_LIBRARY)
+LOCAL_MODULE_TAGS := optional
 
+include $(BUILD_SHARED_LIBRARY)

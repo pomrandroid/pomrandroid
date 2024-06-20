@@ -119,8 +119,8 @@ ConstFstImpl<A>::ConstFstImpl(const Fst<A> &fst) : nstates_(0), narcs_(0) {
   SetType("const");
   uint64 copy_properties = fst.Properties(kCopyProperties, true);
   SetProperties(copy_properties | kStaticProperties);
-  SetInputSymbols(fst.InputSymbols());
-  SetOutputSymbols(fst.OutputSymbols());
+  this->SetInputSymbols(fst.InputSymbols());
+  this->SetOutputSymbols(fst.OutputSymbols());
   start_ = fst.Start();
 
   // count # of states and arcs
@@ -211,9 +211,11 @@ bool ConstFstImpl<A>::Write(ostream &strm,
     strm.write("", 1);
   strm.write(reinterpret_cast<char *>(arcs_), narcs_ * sizeof(A));
   strm.flush();
-  if (!strm)
+  if (!strm) {
     LOG(ERROR) << "ConstFst::Write: Write failed: " << opts.source;
-  return strm;
+    return false;
+  }
+  return true;
 }
 
 // Simple concrete immutable FST.  This class attaches interface to

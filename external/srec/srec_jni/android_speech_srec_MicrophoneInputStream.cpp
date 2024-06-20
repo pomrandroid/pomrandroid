@@ -28,6 +28,8 @@
 #include <media/AudioRecord.h>
 #include <media/mediarecorder.h>
 
+#include <system/audio.h>
+
 #include <jni.h>
 
 using namespace android;
@@ -51,37 +53,44 @@ static void throwException(JNIEnv *env, const char* ex, const char* fmt, int dat
 // MicrophoneInputStream JNI implememtations
 ///////////////////////////////////////////////////////////////////////////////
 
-static JNIEXPORT jint JNICALL Java_android_speech_srec_Recognizer_AudioRecordNew
+// Java uses an int to hold a raw pointer, which is already ugly.
+// But we need to hold an sp<>, which is of unknown size.
+// So we wrap the sp<> within a class, and give Java the int version of a pointer to this class.
+class AudioRecordWrapper {
+public:
+    AudioRecordWrapper(AudioRecord *audioRecord) : mAudioRecord(audioRecord) { }
+    ~AudioRecordWrapper() { }
+    AudioRecord* get() const { return mAudioRecord.get(); }
+private:
+    const sp<AudioRecord> mAudioRecord;
+};
+
+static JNIEXPORT jlong JNICALL Java_android_speech_srec_Recognizer_AudioRecordNew
         (JNIEnv *env, jclass clazz, jint sampleRate, jint fifoFrames) {
 
-    android::AudioRecord* ar = new android::AudioRecord(
-            android::AUDIO_SOURCE_VOICE_RECOGNITION, sampleRate,
-            android::AudioSystem::PCM_16_BIT, android::AudioSystem::CHANNEL_IN_MONO,
-            fifoFrames, 0);
-    if (ar == NULL) {
-        LOGE("Error creating AudioRecord");
+    AudioRecordWrapper *ar = new AudioRecordWrapper(new AudioRecord(
+            AUDIO_SOURCE_VOICE_RECOGNITION, sampleRate,
+            AUDIO_FORMAT_PCM_16_BIT, AUDIO_CHANNEL_IN_MONO,
+            fifoFrames));
+    status_t s = ar->get()->initCheck();
+    if (s != NO_ERROR) {
+        delete ar;
+        ar = NULL;
+        ALOGE("initCheck error %d ", s);
     }
-    else {
-        status_t s = ar->initCheck();
-        if (s != NO_ERROR) {
-            delete ar;
-            ar = NULL;
-            LOGE("initCheck error %d ", s);
-        }
-    }
-    return (int)ar;
+    return (jlong)ar;
 }
 
-static JNIEXPORT int JNICALL Java_android_speech_srec_Recognizer_AudioRecordStart
-        (JNIEnv *env, jclass clazz, jint audioRecord) {
-    return (int)(((AudioRecord*)audioRecord)->start());
+static JNIEXPORT jint JNICALL Java_android_speech_srec_Recognizer_AudioRecordStart
+        (JNIEnv *env, jclass clazz, jlong audioRecord) {
+    return (jint)(((AudioRecordWrapper*)audioRecord)->get()->start());
 }
 
 static JNIEXPORT jint JNICALL Java_android_speech_srec_Recognizer_AudioRecordRead
-        (JNIEnv *env, jclass clazz, jint audioRecord, jbyteArray array, jint offset, jint length) {
+        (JNIEnv *env, jclass clazz, jlong audioRecord, jbyteArray array, jint offset, jint length) {
     jbyte buffer[4096];
     if (length > (int)sizeof(buffer)) length = sizeof(buffer);
-    length = ((AudioRecord*)audioRecord)->read(buffer, length);
+    length = ((AudioRecordWrapper*)audioRecord)->get()->read(buffer, length);
     if (length < 0) {
         throwException(env, "java/io/IOException", "AudioRecord::read failed %d", length);
         return -1;
@@ -91,15 +100,13 @@ static JNIEXPORT jint JNICALL Java_android_speech_srec_Recognizer_AudioRecordRea
 }
 
 static JNIEXPORT void JNICALL Java_android_speech_srec_Recognizer_AudioRecordStop
-        (JNIEnv *env, jclass clazz, jint audioRecord) {
-    if (int rtn = ((AudioRecord*)audioRecord)->stop()) {
-        throwException(env, "java/io/IOException", "AudioRecord::stop failed %d", rtn);
-    }
+        (JNIEnv *env, jclass clazz, jlong audioRecord) {
+    ((AudioRecordWrapper*)audioRecord)->get()->stop();
 }
 
 static JNIEXPORT void JNICALL Java_android_speech_srec_Recognizer_AudioRecordDelete
-        (JNIEnv *env, jclass clazz, jint audioRecord) {
-    delete (AudioRecord*)audioRecord;
+        (JNIEnv *env, jclass clazz, jlong audioRecord) {
+    delete (AudioRecordWrapper*)audioRecord;
 }
 
 
@@ -108,11 +115,11 @@ static JNIEXPORT void JNICALL Java_android_speech_srec_Recognizer_AudioRecordDel
  */
 static JNINativeMethod gMethods[] = {
     /* name, signature, funcPtr */
-    {"AudioRecordNew",    "(II)I",    (void*)Java_android_speech_srec_Recognizer_AudioRecordNew},
-    {"AudioRecordStart",  "(I)I",     (void*)Java_android_speech_srec_Recognizer_AudioRecordStart},
-    {"AudioRecordRead",   "(I[BII)I", (void*)Java_android_speech_srec_Recognizer_AudioRecordRead},
-    {"AudioRecordStop",   "(I)V",     (void*)Java_android_speech_srec_Recognizer_AudioRecordStop},
-    {"AudioRecordDelete", "(I)V",     (void*)Java_android_speech_srec_Recognizer_AudioRecordDelete},
+    {"AudioRecordNew",    "(II)J",    (void*)Java_android_speech_srec_Recognizer_AudioRecordNew},
+    {"AudioRecordStart",  "(J)I",     (void*)Java_android_speech_srec_Recognizer_AudioRecordStart},
+    {"AudioRecordRead",   "(J[BII)I", (void*)Java_android_speech_srec_Recognizer_AudioRecordRead},
+    {"AudioRecordStop",   "(J)V",     (void*)Java_android_speech_srec_Recognizer_AudioRecordStop},
+    {"AudioRecordDelete", "(J)V",     (void*)Java_android_speech_srec_Recognizer_AudioRecordDelete},
 };
 
 /*
@@ -127,19 +134,19 @@ jint register_android_speech_srec_MicrophoneInputStream(JavaVM* vm, void* reserv
     const char* className = "android/speech/srec/MicrophoneInputStream";
 
     if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
-        LOGE("ERROR: GetEnv failed\n");
+        ALOGE("ERROR: GetEnv failed\n");
         return -1;
     }
     assert(env != NULL);
 
     clazz = env->FindClass(className);
     if (clazz == NULL) {
-        LOGE("Native registration unable to find class '%s'\n", className);
+        ALOGE("Native registration unable to find class '%s'\n", className);
         return -1;
     }
     if (env->RegisterNatives(clazz, gMethods,
             sizeof(gMethods) / sizeof(gMethods[0])) < 0) {
-        LOGE("RegisterNatives failed for '%s'\n", className);
+        ALOGE("RegisterNatives failed for '%s'\n", className);
         return -1;
     }
 

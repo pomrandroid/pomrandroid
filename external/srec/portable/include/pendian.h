@@ -38,25 +38,10 @@
 /*	*//*	*/#define __BYTE_ORDER __BIG_ENDIAN
 /*	*/#endif
 
-#elif defined(ANDROID)
-
-/*  */#ifdef HAVE_ENDIAN
-/*  */#include <endian.h>
-
-/*  */#elif defined(HAVE_LITTLE_ENDIAN)
-/*  *//*   */#define __LITTLE_ENDIAN 1234
-/*  *//*   */#define __BYTE_ORDER __LITTLE_ENDIAN
-
-/*  */#elif defined(HAVE_BIG_ENDIAN)
-/*  *//*   */#define __BIG_ENDIAN 4321
-/*  *//*   */#define __BYTE_ORDER __BIG_ENDIAN
-
-/*  */#endif
-
 #elif defined (__linux)
 /*	    */#include <endian.h>
 
-#elif defined(__FreeBSD__) || defined(_decunix_)
+#elif defined (__APPLE__) || defined(__FreeBSD__) || defined(_decunix_)
 /*	*/#include <machine/endian.h>
 
 #elif defined(__i386) || defined(_M_IX86)
