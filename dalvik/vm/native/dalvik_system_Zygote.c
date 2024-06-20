@@ -30,6 +30,10 @@
 # include <sys/prctl.h>
 #endif
 
+#ifndef rlimit
+#include <sys/resource.h>
+#endif
+
 #define ZYGOTE_LOG_TAG "Zygote"
 
 /* must match values in dalvik.system.Zygote */

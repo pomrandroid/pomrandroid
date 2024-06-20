@@ -344,7 +344,7 @@ typedef enum {
 
 #if ADB_TRACE
 
-  int     adb_trace_mask;
+  extern int     adb_trace_mask;
 
   void    adb_trace_init(void);
 
